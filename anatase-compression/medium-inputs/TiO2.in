@@ -1,0 +1,56 @@
+#  --------------------- Initialisation  ---------------------
+units real # distances in A, energies in kCal/mol, pressure in atms, time in fs
+dimension 3
+boundary p p p          # periodic in x, y, z
+atom_style   charge
+
+
+#  --------------------- Atom definition  ---------------------
+box tilt large          # relax restictions on box tilt factors
+read_data '../all-confs/PREFIX-P-0.conf'
+
+neigh_modify every 1 delay 0 check yes # update neigbour every step
+neighbor 2.0 bin                       # neighbour list skin
+
+replicate 6 6 6
+
+#  --------------------- Potential definition  ---------------------
+include ./TiO2.pp
+
+#  --------------------- set pressure  ---------------------
+# temperature settings
+variable T1 equal TTTTT
+variable T2 equal TTTTT
+
+# pressure settings
+variable p1 equal 9869.2327*0 # Convert GPa to atm
+variable p2 equal 9869.2327*70
+
+velocity       all create ${T1} 23244RRRRR dist gaussian mom yes rot yes
+
+
+# ---------- therodynamic properties ---------------------
+
+thermo_style custom step time temp press pe ke etotal enthalpy vol
+thermo 10
+
+
+
+fix 1 all nph tri ${p1} ${p1} 500
+fix 2 all temp/csvr ${T1} ${T1} 100 573591
+
+run 10000
+
+unfix 1
+unfix 2
+
+#  --------------------- dumping xyz files ---------------------
+dump 1 all custom 100 out.lammpstrj id type x y z # dump configuration into a trajectory file
+dump_modify 1 sort id
+
+
+fix 3 all nph tri ${p1} ${p2} 500
+fix 4 all temp/csvr ${T1} ${T2} 100 534596
+
+run 1000000
+
