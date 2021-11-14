@@ -1,0 +1,62 @@
+#  --------------------- Initialisation  ---------------------
+units real # distances in A, energies in kCal/mol, pressure in atms, time in fs
+dimension 3
+boundary p p p          # periodic in x, y, z
+atom_style   charge
+
+
+#  --------------------- Atom definition  ---------------------
+box tilt large          # relax restictions on box tilt factors
+read_data ../../replicate-n-optimize/replicated-NAMENOW-P-PRESSURE.conf
+
+neigh_modify every 1 delay 0 check yes # update neigbour every step
+neighbor 2.0 bin                       # neighbour list skin
+
+#  --------------------- Potential definition  ---------------------
+include ../TiO2.pp
+
+#  --------------------- set pressure  ---------------------
+# temperature settings
+variable temperature equal TEMPERATURE
+# pressure settings
+variable extpress equal 9869.2327*PRESSURE # Convert GPa to atm
+
+velocity       all create ${temperature} 12345 dist gaussian mom yes rot yes
+
+
+# ---------- therodynamic properties ---------------------
+
+thermo_style custom step time atoms temp press pe ke etotal enthalpy vol
+thermo 1
+
+#  --------------------- dumping xyz files ---------------------
+dump 1 all custom 1 NAMENOW-P-PRESSURE-T-TEMPERATURE.lammpstrj id type x y z fx fy fz # dump configuration into a trajectory file
+dump_modify 1 sort id
+
+fix 1 all nph tri ${extpress} ${extpress} 500
+fix 3 all temp/csvr ${temperature} ${temperature} 100 738268
+
+run 30000
+
+# Variables defined for printing
+variable h equal 0.043364104*enthalpy # kcal/mol to ev
+variable pote equal 0.043364104*pe # kcal/mol to ev
+variable v equal vol
+variable p equal press/10000.0            # convert Bar back to GPa
+variable a equal cella
+variable b equal cellb
+variable c equal cellc
+variable alp equal cellalpha
+variable bet equal cellbeta
+variable gam equal cellgamma
+variable PEFU equal 3.*${pote}/atoms
+variable VFU equal 3.*vol/atoms
+
+print "Lattice parameters:  a=${a} b=${b} c=${c} alpha=${alp} beta=${bet} gamma=${gam}" file ./NAMENOW-P-PRESSURE-T-TEMPERATURE.lammpsresult
+print "Volume: $v A^3" append ./NAMENOW-P-PRESSURE-T-TEMPERATURE.lammpsresult
+print "Pressure: $p GPa" append ./NAMENOW-P-PRESSURE-T-TEMPERATURE.lammpsresult
+print "PotEnergy: ${pote} eV" append ./NAMENOW-P-PRESSURE-T-TEMPERATURE.lammpsresult
+print "Enthalpy: $h eV" append ./NAMENOW-P-PRESSURE-T-TEMPERATURE.lammpsresult
+print "per_f.u._PE(eV/atom): ${PEFU} eV/atom" append ./NAMENOW-P-PRESSURE-T-TEMPERATURE.lammpsresult
+print "volume_f.u.(A^3) ${VFU} A^3/atom" append ./NAMENOW-P-PRESSURE-T-TEMPERATURE.lammpsresult
+
