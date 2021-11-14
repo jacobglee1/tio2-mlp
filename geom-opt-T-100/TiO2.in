@@ -1,0 +1,95 @@
+#  --------------------- Initialisation  ---------------------
+units real
+dimension 3
+boundary p p p          # periodic in x, y, z
+atom_style   charge
+
+#  --------------------- set pressure  ---------------------
+variable extpress equal 9869.23*PRESSURE # Convert GPa to bar
+
+#  --------------------- Atom definition  ---------------------
+box tilt large          # relax restictions on box tilt factors
+
+region mybox prism 0 1 0 1 0 1 0 0 0
+create_box 2 mybox
+read_dump NAMENOW-P-PRESSURE-T-TEMPERATURE-last.lammpstrj 0 x y z box yes replace yes add yes
+
+neigh_modify every 1 delay 0 check yes # update neigbour every step
+neighbor 1.0 bin                       # neighbour list skin
+
+#  --------------------- Potential definition  ---------------------
+include ../TiO2.pp
+
+thermo           1
+thermo_style     custom step temp pe ke enthalpy vol lx press #pxx pyy pzz pxy pyz pxz
+
+#  --------------------- record traj  ---------------------
+dump mintraj all atom 1 NAMENOW-P-PRESSURE.lammpstrj          # dump the trajectory
+dump_modify mintraj sort id                 # sort atoms by numerical label
+dump_modify mintraj scale no
+
+# ---------- EQUILIBRATION 0 -------------------------
+min_style sd
+min_modify line backtrack
+# Multiple minimisations to prevent trapping
+displace_atoms all random 0.05 0.05 0.05 3453
+fix minbox all box/relax tri ${extpress} vmax 0.1
+minimize 1.0e-8 1.0e-6 10000 1000000
+displace_atoms all random 0.05 0.05 0.05 3453
+fix minbox all box/relax tri ${extpress} vmax 0.01
+minimize 1.0e-8 1.0e-6 10000 1000000
+displace_atoms all random 0.05 0.05 0.05 3453
+fix minbox all box/relax tri ${extpress} vmax 0.01
+minimize 1.0e-10 1.0e-8 10000 100000
+displace_atoms all random 0.05 0.05 0.05 3453
+fix minbox all box/relax tri ${extpress} vmax 0.001
+minimize 1.0e-10 1.0e-8 10000 100000
+unfix minbox
+
+# ---------- RE-EQUILIBRATION 2 -------------------------
+
+min_style cg
+min_modify line quadratic
+## Multiple minimisations to prevent trapping
+#displace_atoms all random 0.05 0.05 0.05 3453
+fix minbox all box/relax tri ${extpress} vmax 0.1
+minimize 1.0e-8 1.0e-6 10000 1000000
+#displace_atoms all random 0.05 0.05 0.05 3453
+fix minbox all box/relax tri ${extpress} vmax 0.01
+minimize 1.0e-8 1.0e-6 10000 1000000
+#displace_atoms all random 0.05 0.05 0.05 3453
+fix minbox all box/relax tri ${extpress} vmax 0.01
+minimize 1.0e-10 1.0e-8 10000 100000
+#displace_atoms all random 0.05 0.05 0.05 3453
+fix minbox all box/relax tri ${extpress} vmax 0.001
+minimize 1.0e-10 1.0e-8 10000 100000
+unfix minbox
+
+#  --------------------- dumping xyz files ---------------------
+dump 1 all custom 1 NAMENOW-P-PRESSURE-T-TEMPERATURE.lammpstrj id type x y z fx fy fz # dump configuration into a trajectory fil
+dump_modify 1 sort id element O Ti
+
+#   ---------------------  collect results   --------------------- 
+# Variables defined for printing
+variable h equal enthalpy*0.043364104 # kcal_mol to eV
+variable e equal etotal*0.043364104
+variable epot equal pe*0.043364104
+variable v equal vol
+variable p equal press/9869.23            # convert atm back to GPa
+variable a equal cella
+variable b equal cellb
+variable c equal cellc
+variable n equal atoms
+variable alp equal cellalpha
+variable bet equal cellbeta
+variable gam equal cellgamma
+# Print AIRSS-specific data in $seed.lammps
+print "Lattice parameters:  ${a} ${b} ${c} ${alp} ${bet} ${gam}" file NAMENOW-P-PRESSURE-T-TEMPERATURE.lammps
+print "Volume: $v" append NAMENOW-P-PRESSURE-T-TEMPERATURE.lammps
+print "Pressure: $p" append NAMENOW-P-PRESSURE-T-TEMPERATURE.lammps
+print "Enthalpy: $h" append NAMENOW-P-PRESSURE-T-TEMPERATURE.lammps
+print "Number of Atoms: $n" append NAMENOW-P-PRESSURE-T-TEMPERATURE.lammps
+print "Potential: ${epot}" append NAMENOW-P-PRESSURE-T-TEMPERATURE.lammps
+print "Total Energy: $e" append NAMENOW-P-PRESSURE-T-TEMPERATURE.lammps
+
+undump 1
