@@ -9,4 +9,4 @@ Gibbs Free Energy and TI Calculations:		ti  \
 Anatase Compression MD: 	  		          anatase-compression  \ 
   \
 RuNNer was used for training the MLP.  \
-LAMMPS, incluing the N2P2 plugin, and i-PI were used for the subsequent simulations.  \
+LAMMPS, incluing the N2P2 plugin, and i-PI were used for the subsequent simulations.
