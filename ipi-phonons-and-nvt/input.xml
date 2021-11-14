@@ -1,0 +1,32 @@
+<simulation verbosity="medium">
+   <output prefix='phonon'>
+      <properties stride='1' filename='out'>  [ step, time{femtosecond}, conserved, temperature{kelvin}, potential, pressure_md, volume, cell_h ] </properties>
+      <trajectory filename='pos' stride='1' bead='0' format='xyz' cell_units='angstrom'> positions{angstrom} </trajectory>
+   </output>
+   <total_steps>50000</total_steps>
+   <prng><seed>832346</seed></prng>
+   <ffsocket name="lmpserial1" mode="unix" pbc="true">
+      <address>phonon2-PREFIX-PRESSURE</address>
+   </ffsocket>
+   <system>
+   <initialize nbeads='1'> 
+      <file mode='xyz'> start.xyz </file>
+      <velocities mode="thermal" units='kelvin'> 100 </velocities>
+   </initialize>
+   <forces>
+   <force forcefield="lmpserial1"> </force>
+   </forces>
+      <motion mode="vibrations">
+        <vibrations mode="fd">
+            <pos_shift> 0.001 </pos_shift>
+            <energy_shift> 0.001 </energy_shift>
+            <prefix> phonon-fd </prefix>
+            <asr> crystal </asr>
+         </vibrations>
+      </motion>
+     <ensemble>
+      <temperature units='kelvin'> 100 </temperature>
+      <pressure units='gigapascal'> PRESSURE </pressure>
+   </ensemble>
+</system>
+</simulation>

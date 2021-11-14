@@ -1,0 +1,32 @@
+# Input file for Stack Fault Energy surface of Nickel
+# Richard Glaze, 2014
+# --------------------- INITIALIZAITION ---------------------
+clear
+units		real
+dimension	3
+boundary	p p p
+atom_style	charge
+
+#  --------------------- Atom definition  ---------------------
+box tilt large          # relax restictions on box tilt factors
+#read_data start.conf
+region mybox prism 0 1 0 1 0 1 0 0 0
+create_box 2 mybox
+read_dump start.lammpstrj 0 x y z box yes replace yes add yes
+
+neigh_modify every 1 delay 0 check yes one 10000 # update neigbour every step
+neighbor 0.3 bin                       # neighbour list skin
+
+#  --------------------- Potential definition  ---------------------
+include ../TiO2.pp
+
+thermo 1
+thermo_style custom step temp pe enthalpy lx ly lz atoms press pxx pyy pzz pxy pyz pxz
+
+# ---------- EQUILIBRATION -------------------------
+
+reset_timestep 0
+
+fix 1 all ipi har-PREFIX-PRESSURE 32346 unix
+
+run 200000000
