@@ -2,7 +2,6 @@ import sys
 import numpy as np
 from scipy import stats
 import os.path
-from thermodynamic_integration import *
 
 go0kDir     = '../geom-opt-T-0'
 goT0Dir     = '../geom-opt-T-100'
