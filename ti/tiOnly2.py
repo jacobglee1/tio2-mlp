@@ -1,5 +1,4 @@
 import numpy as np
-from thermodynamic_integration import *
 import sys
 import os
 import scipy.integrate
